@@ -1,2 +1,2 @@
 # go-modbus
-Implementation of Modbus RTU protocol over 
+Go implementation of Modbus RTU protocol over 
