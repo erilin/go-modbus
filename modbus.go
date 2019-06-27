@@ -1,49 +1,74 @@
 package modbus
 
-import "log"
+import (
+	"fmt"
+	"log"
+)
 
+//ReaderWriter interface for read or write to dupline master
 type ReaderWriter interface {
 	Read(buf []byte) (int, error)
 	Write(buf []byte) (int, error)
 	Flush() error
 }
 
+//Modbus struct for interacting
 type Modbus struct {
 	rw ReaderWriter
 }
 
+//NewModbus creates Modbus
+func NewModbus(rw ReaderWriter) Modbus {
+	return Modbus{rw: rw}
+}
+
 //SendFunc3 Address (addr), Start(s), Number of registers(r), Values (v)
-func (mb *Modbus) SendFunc3(addr byte, s uint16, r uint16, v []int16) ([]Register, error) {
-	mb.rw.Flush()
-
-	//Message is 1 addr + 1 fcn + 2 start + 2 reg + 1 count + 2 * reg vals + 2 CRC
-	msg := make([]byte, 9+2*r)
-	//Function 16 response is fixed at 8 bytes
-	//rsp := [8]byte{}
-
-	//Add bytecount to message:
-	msg[6] = byte(r * 2)
-	//Put write values into message prior to sending:
-	for i := uint16(0); i < r; i++ {
-		msg[7+2*i] = byte(v[i] >> 8)
-		msg[8+2*i] = byte(v[i])
-	}
+func (mb *Modbus) SendFunc3(addr byte, s uint16, r uint16) ([]Register, error) {
+	//Function 3 request is always 8 bytes:
+	msg := make([]byte, 8)
+	//Function 3 response buffer:
+	rsp := make([]byte, 5+2*r)
 
 	buildMessage(addr, F03, 0, r, msg)
 
 	err := mb.rw.Flush()
 	if err != nil {
-		log.Printf("ReaderWrite.Flush: %s", err.Error())
+		log.Printf("ReaderWrite. Flush: %s", err.Error())
+		return []Register{}, nil
 	}
 	_, err = mb.rw.Write(msg)
 	if err != nil {
-		log.Printf("ReaderWrite.Write: %s", err.Error())
+		log.Printf("ReaderWrite. Write: %s", err.Error())
+		return []Register{}, nil
 	}
 
-	resp := []byte{}
-	_, err = mb.rw.Read(resp)
+	//Get response
+	n, err := mb.rw.Read(rsp)
+	if err != nil {
+		log.Printf("ReaderWrite. Read: %s", err.Error())
+		return []Register{}, nil
+	}
 
-	return []Register{}, nil
+	//Evaluate message:
+	err = checkCRC(rsp)
+	if err != nil {
+		log.Printf("CheckCRC: %s", err.Error())
+		return []Register{}, nil
+	}
+
+	//Return requested register values:
+	c := (n - 5) / 2
+	regs := make([]Register, c)
+
+	for i := 0; i < c; i++ {
+		reg := Register{
+			HiByte: rsp[2*i+3],
+			LoByte: rsp[2*i+4],
+		}
+		regs[i] = reg
+	}
+
+	return regs, nil
 }
 
 func buildMessage(addr byte, fn int, s uint16, r uint16, msg []byte) {
@@ -81,7 +106,21 @@ func crc(msg []byte) [2]byte {
 	return crc
 }
 
+func checkCRC(r []byte) error {
+	crc := crc(r)
+	l := len(r)
+	vld := crc[0] == r[l-2] && crc[1] == r[l-1]
+
+	if vld {
+		return nil
+	}
+
+	return fmt.Errorf("CRC error. Invalid CRC in response")
+}
+
 const (
+	//F03 Modbus 3 func
 	F03 int = 3
+	//F16 Modbus 16 func
 	F16 int = 16
 )

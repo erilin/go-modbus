@@ -1,6 +1,7 @@
 package modbus
 
+//Register result values from Dupline Master
 type Register struct {
-	HiByte  byte
-	LowByte byte
+	HiByte byte
+	LoByte byte
 }
