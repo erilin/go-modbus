@@ -5,6 +5,13 @@ import (
 	"log"
 )
 
+const (
+	//F03 Modbus 3 func
+	F03 int = 3
+	//F16 Modbus 16 func
+	F16 int = 16
+)
+
 //Reader interface for read or write to dupline master
 type Reader interface {
 	Read(buf []byte) (int, error)
@@ -13,7 +20,6 @@ type Reader interface {
 //Writer interface for read or write to dupline master
 type Writer interface {
 	Write(buf []byte) (int, error)
-	Flush() error
 }
 
 //ReaderWriter interface for read or write to dupline master
@@ -34,28 +40,21 @@ func NewModbus(rw ReaderWriter) *Modbus {
 
 //SendFunc3 Address (addr), Start(s), Number of registers(r), Values (v)
 func (mb *Modbus) SendFunc3(addr byte, s uint16, r uint16) ([]Register, error) {
-	//Function 3 request is always 8 bytes:
 	msg := make([]byte, 8)
-	//Function 3 response buffer:
 	rsp := make([]byte, 5+2*r)
 
 	buildMessage(addr, F03, 0, r, msg)
 
-	err := mb.rw.Flush()
+	_, err := mb.rw.Write(msg)
 	if err != nil {
-		log.Printf("ReaderWrite. Flush: %s", err.Error())
-		return []Register{}, err
-	}
-	_, err = mb.rw.Write(msg)
-	if err != nil {
-		log.Printf("ReaderWrite. Write: %s", err.Error())
+		log.Printf("ReaderWriter.Write: %s", err.Error())
 		return []Register{}, err
 	}
 
 	//Get response
 	n, err := mb.rw.Read(rsp)
 	if err != nil {
-		log.Printf("ReaderWrite. Read: %s", err.Error())
+		log.Printf("ReaderWriter.Read: %s", err.Error())
 		return []Register{}, err
 	}
 
@@ -63,7 +62,7 @@ func (mb *Modbus) SendFunc3(addr byte, s uint16, r uint16) ([]Register, error) {
 	err = checkCRC(rsp)
 	if err != nil {
 		log.Printf("CheckCRC: %s", err.Error())
-		//return []Register{}, nil
+		return []Register{}, err
 	}
 
 	//Return requested register values:
@@ -98,7 +97,6 @@ func buildMessage(addr byte, fn int, s uint16, r uint16, msg []byte) {
 //crc func expects a modbus message of any length as well as a 2 byte CRC array in which to return the CRC values
 func crc(msg []byte) [2]byte {
 	full := uint16(0xFFFF)
-
 	for i := 0; i < len(msg)-2; i++ {
 		full = full ^ uint16(msg[i])
 		for j := 0; j < 8; j++ {
@@ -127,10 +125,3 @@ func checkCRC(r []byte) error {
 
 	return fmt.Errorf("CRC error. Invalid CRC in response")
 }
-
-const (
-	//F03 Modbus 3 func
-	F03 int = 3
-	//F16 Modbus 16 func
-	F16 int = 16
-)

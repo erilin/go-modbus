@@ -54,12 +54,8 @@ func (rw *fakeReaderWriter) Read(buf []byte) (int, error) {
 	rw.read = buf
 	return len(buf), nil
 }
+
 func (rw *fakeReaderWriter) Write(buf []byte) (int, error) {
 	rw.written = buf
 	return len(buf), nil
-}
-func (rw *fakeReaderWriter) Flush() error {
-	rw.written = []byte{}
-	rw.read = []byte{}
-	return nil
 }
