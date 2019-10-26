@@ -5,11 +5,21 @@ import (
 	"log"
 )
 
-//ReaderWriter interface for read or write to dupline master
-type ReaderWriter interface {
+//Reader interface for read or write to dupline master
+type Reader interface {
 	Read(buf []byte) (int, error)
+}
+
+//Writer interface for read or write to dupline master
+type Writer interface {
 	Write(buf []byte) (int, error)
 	Flush() error
+}
+
+//ReaderWriter interface for read or write to dupline master
+type ReaderWriter interface {
+	Reader
+	Writer
 }
 
 //Modbus struct for interacting
@@ -18,8 +28,8 @@ type Modbus struct {
 }
 
 //NewModbus creates Modbus
-func NewModbus(rw ReaderWriter) Modbus {
-	return Modbus{rw: rw}
+func NewModbus(rw ReaderWriter) *Modbus {
+	return &Modbus{rw: rw}
 }
 
 //SendFunc3 Address (addr), Start(s), Number of registers(r), Values (v)
