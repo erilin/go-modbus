@@ -29,7 +29,7 @@ func TestSendFunc3(t *testing.T) {
 	rw := fakeReaderWriter{}
 	mb := NewModbus(&rw)
 
-	mb.SendFunc3(byte(1), 0, 16)
+	mb.SendFunc3(byte(1), 0, 8)
 
 	if rw.written[0] != 0x01 {
 		t.Errorf("Address should be 0x01. Actual 0x%x", rw.written[0])
@@ -40,8 +40,8 @@ func TestSendFunc3(t *testing.T) {
 	if rw.written[2]+rw.written[3] != 0x0000 {
 		t.Errorf("Address of first register should be 0x0000 (0). Actual 0x%x", rw.written[2]+rw.written[3])
 	}
-	if rw.written[4]+rw.written[5] != 0x0010 {
-		t.Errorf("Number of requested registers should be 0x0010 (16). Actual 0x%x", rw.written[4]+rw.written[5])
+	if rw.written[4]+rw.written[5] != 0x0008 {
+		t.Errorf("Number of requested registers should be 0x0008 (8). Actual 0x%x", rw.written[4]+rw.written[5])
 	}
 }
 

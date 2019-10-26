@@ -44,26 +44,26 @@ func (mb *Modbus) SendFunc3(addr byte, s uint16, r uint16) ([]Register, error) {
 	err := mb.rw.Flush()
 	if err != nil {
 		log.Printf("ReaderWrite. Flush: %s", err.Error())
-		return []Register{}, nil
+		return []Register{}, err
 	}
 	_, err = mb.rw.Write(msg)
 	if err != nil {
 		log.Printf("ReaderWrite. Write: %s", err.Error())
-		return []Register{}, nil
+		return []Register{}, err
 	}
 
 	//Get response
 	n, err := mb.rw.Read(rsp)
 	if err != nil {
 		log.Printf("ReaderWrite. Read: %s", err.Error())
-		return []Register{}, nil
+		return []Register{}, err
 	}
 
 	//Evaluate message:
 	err = checkCRC(rsp)
 	if err != nil {
 		log.Printf("CheckCRC: %s", err.Error())
-		return []Register{}, nil
+		//return []Register{}, nil
 	}
 
 	//Return requested register values:
