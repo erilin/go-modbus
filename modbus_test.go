@@ -26,7 +26,7 @@ func TestSendFunc3(t *testing.T) {
 	   49AD: The CRC (cyclic redundancy check).
 	*/
 
-	rw := fakeReaderWriter{}
+	rw := fakeReadWriter{}
 	mb := NewModbus(&rw)
 
 	mb.SendFunc3(byte(1), 0, 8)
@@ -45,17 +45,17 @@ func TestSendFunc3(t *testing.T) {
 	}
 }
 
-type fakeReaderWriter struct {
+type fakeReadWriter struct {
 	written []byte
 	read    []byte
 }
 
-func (rw *fakeReaderWriter) Read(buf []byte) (int, error) {
+func (rw *fakeReadWriter) Read(buf []byte) (int, error) {
 	rw.read = buf
 	return len(buf), nil
 }
 
-func (rw *fakeReaderWriter) Write(buf []byte) (int, error) {
+func (rw *fakeReadWriter) Write(buf []byte) (int, error) {
 	rw.written = buf
 	return len(buf), nil
 }

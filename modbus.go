@@ -2,6 +2,7 @@ package modbus
 
 import (
 	"fmt"
+	"io"
 	"log"
 )
 
@@ -12,34 +13,23 @@ const (
 	F16 int = 16
 )
 
-//Reader interface for read or write to dupline master
-type Reader interface {
-	Read(buf []byte) (int, error)
+//Modbus interface
+type Modbus interface {
+	SendFunc3(addr byte, s uint16, r uint16) ([]Register, error)
 }
 
-//Writer interface for read or write to dupline master
-type Writer interface {
-	Write(buf []byte) (int, error)
-}
-
-//ReaderWriter interface for read or write to dupline master
-type ReaderWriter interface {
-	Reader
-	Writer
-}
-
-//Modbus struct for interacting
-type Modbus struct {
-	rw ReaderWriter
+//Modbus implementation
+type modbus struct {
+	rw io.ReadWriter
 }
 
 //NewModbus creates Modbus
-func NewModbus(rw ReaderWriter) *Modbus {
-	return &Modbus{rw: rw}
+func NewModbus(rw io.ReadWriter) Modbus {
+	return &modbus{rw: rw}
 }
 
 //SendFunc3 Address (addr), Start(s), Number of registers(r), Values (v)
-func (mb *Modbus) SendFunc3(addr byte, s uint16, r uint16) ([]Register, error) {
+func (mb *modbus) SendFunc3(addr byte, s uint16, r uint16) ([]Register, error) {
 	msg := make([]byte, 8)
 	rsp := make([]byte, 5+2*r)
 
