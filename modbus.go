@@ -15,6 +15,7 @@ const (
 
 //Modbus interface
 type Modbus interface {
+	//SendFunc3 Address (addr), Start(s), Number of registers(r). Returns Registers read
 	SendFunc3(addr byte, s uint16, r uint16) ([]Register, error)
 }
 
@@ -28,7 +29,7 @@ func NewModbus(rw io.ReadWriter) Modbus {
 	return &modbus{rw: rw}
 }
 
-//SendFunc3 Address (addr), Start(s), Number of registers(r), Values (v)
+//SendFunc3 Address (addr), Start(s), Number of registers(r)
 func (mb *modbus) SendFunc3(addr byte, s uint16, r uint16) ([]Register, error) {
 	msg := make([]byte, 8)
 	rsp := make([]byte, 5+2*r)
